@@ -1,0 +1,5 @@
+sample;condition;Filename
+mut_lib1;mutant;mut_lib1_counts
+mut_lib2;mutant;mut_lib2_counts
+WT_lib1;wild;WT_lib1_counts
+WT_lib2;wild;WT_lib2_counts

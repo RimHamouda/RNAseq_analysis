@@ -1,0 +1,121 @@
+# 🔬 RNA-seq Analysis: Mutant vs WildType in Drosophila melanogaster
+
+Ce dépôt contient le pipeline complet d'analyse RNA-seq différentielle comparant des échantillons Mutants et WildType chez *Drosophila melanogaster* (DM6).
+
+L'objectif de cette analyse était d'identifier les gènes différentiellement exprimés (DEGs) suite à la mutation, en utilisant une approche statistique rigoureuse via DESeq2.
+
+## 💾 Acquisition et Données Brutes
+
+Pour garantir une reproductibilité totale, les utilisateurs doivent télécharger les données brutes et les fichiers de référence à partir des sources officielles.
+
+1. Données Brutes RNA-seq (FastQ)
+
+Les fichiers FastQ pour cette analyse (Mutant et WildType) proviennent du dépôt public 'Zenodo'.
+
+Lien du dépôt :[https://zenodo.org/records/849901](https://zenodo.org/records/849901)
+Procédure :Téléchargez les fichiers compressés à partir du lien ci-dessus. 
+Après décompression, les fichiers (`mut_lib1_R1.fq.gz`, etc.) doivent être placés dans le dossier 'data/raw/'.
+
+2. Fichiers de Référence
+
+Les fichiers de référence pour Drosophila melanogaster (version BDGP6 / Ensembl 110) sont requis pour l'alignement et la quantification.
+
+*Génome FASTA (.fa) : Téléchargez la séquence du génome.
+Nom de fichier attendu : 'Drosophila_melanogaster.BDGP6.dna.toplevle.fa'
+*Annotation GTF (.gtf) : Téléchargez le fichier d'annotation.
+*Nom de fichier attendu : 'Drosophila_melanogaster.BDGP6.46.110.gtf'
+
+Ces fichiers doivent être placés dans le dossier 'data/reference/'.
+
+---
+
+## ⚙️ Configuration et Dépendances
+
+L'analyse a été développée et testée sur un environnement Ubuntu/Debian. La reproductibilité nécessite l'installation des outils suivants.
+
+1. Outils Bio-informatiques de Base (via `apt` et `pip`)
+
+Installez les dépendances de base et les outils du pipeline :
+
+
+# Mettre à jour les paquets système
+sudo apt update
+
+# Installer Java (nécessaire pour Trimmomatic) et les outils essentiels
+sudo apt install -y default-jre
+sudo apt install -y fastqc     # Contrôle Qualité
+sudo apt install -y samtools   # Manipulation des fichiers BAM/SAM
+sudo apt install -y hisat2     # Alignement (si installé via APT)
+sudo apt install -y subread    # Quantification (featureCounts)
+sudo apt install -y python3-pip
+pip install multiqc    # Agrégation des rapports QC (installation via pip, recommandé)
+# Installer R et les outils essentiels (R est nécessaire pour Rscript/RStudio)
+sudo apt install -y r-base-core 
+sudo apt install -y default-jre
+
+
+2. Installation Spécifique de Trimmomatic (v0.39)
+Trimmomatic est installé manuellement et un lien symbolique est créé pour que le script Bash y accède directement via le chemin /usr/local/bin/trimmomatic.jar.
+
+# Télécharger l'archive
+wget (https://github.com/usadellab/Trimmomatic/releases/download/v0.39/trimmomatic-0.39.zip)
+unzip trimmomatic-0.39.zip
+
+# Déplacer l'outil et créer le lien symbolique (chemin utilisé dans le script Bash)
+sudo mv trimmomatic-0.39 /opt/trimmomatic
+sudo ln -s /opt/trimmomatic/trimmomatic-0.39.jar /usr/local/bin/trimmomatic.jar
+
+# (Optionnel) Ajout d'un alias pour une utilisation manuelle
+# echo 'alias trimmomatic="java -jar /usr/local/bin/trimmomatic.jar"' >> ~/.bashrc
+# source ~/.bashrc
+
+3. Packages R
+Les packages nécessaires pour l'analyse statistique sont installés via R et le dépôt Bioconductor.
+
+    ```R
+    # Lancer cette commande dans le terminal ou via RStudio :
+    if (!requireNamespace("BiocManager", quietly = TRUE))
+        install.packages("BiocManager")
+
+    BiocManager::install("DESeq2")
+    
+    ```
+
+🚀 Exécution du Pipeline
+Le pipeline se lance en trois étapes :
+
+Étape 0 : Préparation des Fichiers de Référence
+L'index HISAT2 doit être construit manuellement car les fichiers d'index sont trop volumineux pour être inclus dans le dépôt.
+
+Placement des Fichiers : Assurez-vous que le fichier du génome (Drosophila_melanogaster.BDGP6.dna.toplevle.fa) et l'annotation (.gtf) sont dans data/reference/.
+
+Construction de l'Index : Exécutez la commande suivante depuis le dossier racine du projet. Le script Bash s'attend à ce que l'index soit nommé DM6.
+hisat2-build data/reference/Drosophila_melanogaster.BDGP6.dna.toplevel.fa DM6
+
+Étape 1 : Préparation et Quantification (Script Bash)
+Le script Bash (script_rnaseq.sh) gère le QC (FastQC, Trimmomatic, MultiQC), l'Alignement (HISAT2) et la Quantification (FeatureCounts).
+
+Placez les fichiers .fastq.gz dans le dossier data/raw/.
+
+Rendez le script exécutable et lancez-le dans le terminal :
+
+chmod +x script_rnaseq.sh
+./script_rnaseq.sh
+
+Étape 2 : Analyse Statistique (Script R)
+
+L'analyse différentielle des gènes a été effectuée à l'aide de RStudio pour le développement interactif du script 'deseq2_analysis.R'.
+
+Une fois que le fichier de comptage final est généré dans le dossier 'comptage/' par le pipeline Bash, vous avez deux options pour exécuter l'analyse statistique :
+
+*Via RStudio :Ouvrir le script 'deseq2_analysis.R' dans RStudio et exécuter le code manuellement ou via la fonction 'Source'.
+*Via Terminal : Exécuter le script sans interface graphique :
+	Rscript deseq2_analysis.R
+   
+
+📈 Interprétation des Résultats
+Observation Statistique
+L'analyse différentielle (Mutant vs WildType) a été effectuée à l'aide du package DESeq2. Les résultats suggèrent un effet de la mutation très ciblé et subtil. Au seuil strict (padj < 0.05 et Log2FC > 1), seulement 1 gène a été identifié comme étant significativement différentiellement exprimé (DEG).
+
+Perspectives Biologiques
+Ce résultat robuste mais limité indique que l'effet est précis. La prochaine étape essentielle serait de réaliser une Analyse d'Enrichissement Fonctionnel (GO/KEGG) pour déterminer si les gènes DEG ou les candidats faiblement exprimés convergent vers une voie biologique spécifique.
