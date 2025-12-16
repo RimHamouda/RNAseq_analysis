@@ -2,7 +2,7 @@ library(DESeq2)
 #lecture du fichier métadonnées
 metadata <-read.csv("metadata.csv", sep=';')
 #chercher les fichiers issus de features count
-count_files<-list.files(path ="C:/Users/hamou/OneDrive/Desktop/RNAseq_proj/comptage" , pattern ="_counts.txt$", full.names = TRUE )
+count_files<-list.files(path ="RNAseq_proj/comptage" , pattern ="_counts.txt$", full.names = TRUE )
 print(count_file)
 
 #lire les fichiers counts en ignorant l'enete
