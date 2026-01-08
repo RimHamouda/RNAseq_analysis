@@ -3,7 +3,7 @@ library(DESeq2)
 metadata <-read.csv("metadata.csv", sep=';')
 #chercher les fichiers issus de features count
 count_files<-list.files(path ="RNAseq_proj/comptage" , pattern ="_counts.txt$", full.names = TRUE )
-print(count_file)
+print(count_files)
 
 #lire les fichiers counts en ignorant l'enete
 count_data<-lapply(count_files, function(file) {read.delim(file, skip =1)} )
