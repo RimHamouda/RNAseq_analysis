@@ -53,6 +53,19 @@ pip install multiqc    # Agrégation des rapports QC (installation via pip, reco
 sudo apt install -y r-base-core 
 sudo apt install -y default-jre
 
+# configuration Docker
+L'analyse statistique tourne dans un conteneur basé sur rocker/rstudio. Ce conteneur inclut :
+
+R v4.x et RStudio Server.
+
+Les dépendances système Linux (libxml2, libxt, etc.) nécessaires à Bioconductor.
+
+Le package DESeq2 pour l'analyse statistique.
+
+##Prérequis:
+Avoir installé Docker Desktop.
+
+(Pour Windows) Avoir activé le moteur WSL 2.
 
 2. Installation Spécifique de Trimmomatic (v0.39)
 Trimmomatic est installé manuellement et un lien symbolique est créé pour que le script Bash y accède directement via le chemin /usr/local/bin/trimmomatic.jar.
@@ -102,16 +115,25 @@ Rendez le script exécutable et lancez-le dans le terminal :
 chmod +x script_rnaseq.sh
 ./script_rnaseq.sh
 
-Étape 2 : Analyse Statistique (Script R)
+Étape 2 : Analyse Statistique (Environnement docker)
 
-L'analyse différentielle des gènes a été effectuée à l'aide de RStudio pour le développement interactif du script 'deseq2_analysis.R'.
+Pour garantir la reproductibilité de l'analyse avec DESeq2 et éviter les conflits de versions R, la partie statistique est isolée dans un conteneur Docker.
 
-Une fois que le fichier de comptage final est généré dans le dossier 'comptage/' par le pipeline Bash, vous avez deux options pour exécuter l'analyse statistique :
+#Construction de l'image
+Lancez cette commande dans le dossier contenant votre Dockerfile :
+docker build -t labo_rnaseq .
 
-*Via RStudio :Ouvrir le script 'deseq2_analysis.R' dans RStudio et exécuter le code manuellement ou via la fonction 'Source'.
-*Via Terminal : Exécuter le script sans interface graphique :
-	Rscript deseq2_analysis.R
-   
+#Lancement du conteneur
+Liez votre dossier de projet pour que le script R puisse accéder à la matrice de comptage générée à l'étape précédente :
+docker run -d -p 8787:8787 `
+  -e PASSWORD=bioinfo `
+  -v "C:\Chemin\Vers\Votre\Projet:/home/rstudio/projet" `
+  --name mon_rstudio labo_rnaseq
+
+#Exécution dans RStudio
+Connectez-vous sur http://localhost:8787 (User: rstudio / Pass: bioinfo).
+Ouvrez le dossier projet/ dans l'onglet Files.
+Lancez le script deseq2_analysis.R.
 
 📈 Interprétation des Résultats
 Observation Statistique
